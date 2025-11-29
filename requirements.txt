@@ -1,3 +1,10 @@
 pandas
 google-play-scraper
 numpy
+torch 
+transformers 
+scikit-learn 
+spacy 
+nltk
+pytest>=7.0.0
+flake8>=4.0.0
