@@ -1,79 +1,38 @@
-# Byte-compiled / optimized / DLL files
+# Data files
+/data/raw_reviews.csv
+/data/clean_reviews.csv
+/data/*_reviews_*.csv  # This will ignore all analyzed review files with timestamps
+!/data/analyzed_reviews_*.csv  # But keep the analyzed_reviews files
+
+# Python cache and virtual environment
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
+.python-version
+.venv/
+venv/
+ENV/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
 # IDE specific files
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
-*~
 
-# Project specific
-data/raw_reviews.csv
-data/analyzed_reviews_*.csv
-!data/clean_reviews.csv  # Keep clean data in version control
+# Environment variables
+.env
 
 # Logs
-logs/
 *.log
 
-# Local development settings
-local_settings.py
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
