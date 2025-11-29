@@ -16,10 +16,23 @@ os.makedirs(DATA_DIR, exist_ok=True)
 # Set seed for language detection consistency
 DetectorFactory.seed = 0
 
-# Set output filename with timestamp
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-output_filename = f"analyzed_reviews_{timestamp}.csv"
-output_path = DATA_DIR / output_filename
+# Global model variables
+en_sentiment = None
+multi_sentiment = None
+
+def _ensure_models_loaded():
+    """Ensure that the sentiment analysis models are loaded."""
+    global en_sentiment, multi_sentiment
+    if en_sentiment is None or multi_sentiment is None:
+        try:
+            en_sentiment = pipeline("sentiment-analysis", 
+                                 model="distilbert-base-uncased-finetuned-sst-2-english")
+            multi_sentiment = pipeline("sentiment-analysis", 
+                                    model="nlptown/bert-base-multilingual-uncased-sentiment")
+            print("Models loaded successfully")
+        except Exception as e:
+            print(f"Error loading models: {e}")
+            raise
 
 def detect_language(text):
     try:
@@ -52,7 +65,79 @@ def detect_language(text):
     except Exception as e:
         return 'unknown'
 
+def analyze_sentiment(text, language='en'):
+    _ensure_models_loaded()
+    try:
+        if not isinstance(text, str) or not text.strip():
+            return "NEUTRAL", 0.0
+            
+        text = str(text).strip()
+        if len(text) < 3:
+            return "NEUTRAL", 0.0
+
+        if language == 'am':
+            try:
+                result = multi_sentiment(text[:512])[0]
+                score = result['score']
+                if result['label'] in ['4 stars', '5 stars']:
+                    return "POSITIVE", score
+                elif result['label'] in ['1 star', '2 stars']:
+                    return "NEGATIVE", score
+                return "NEUTRAL", score
+            except:
+                language = 'en'  # Fallback to English model
+        
+        if language in ['en', 'other', 'unknown']:
+            result = en_sentiment(text[:512])[0]
+            return result['label'].upper(), result['score']
+        return "NEUTRAL", 0.0
+    except Exception as e:
+        return "ERROR", 0.0
+
+def extract_themes(text, language='en'):
+    try:
+        if not isinstance(text, str) or not text.strip():
+            return ['Other']
+            
+        text_lower = str(text).lower()
+        theme_keywords = {
+            'App Performance': {
+                'en': ['slow', 'fast', 'crash', 'lag', 'freeze', 'speed', 'performance', 'working', 'not working'],
+                'am': ['ዘግይቷል', 'ፈጣን', 'ፕሮግራሙ', 'ስልክ', 'መተግበሪያ', 'ፈረሰ', 'ተቋርጧል', 'ስራ', 'አይሰራም']
+            },
+            'User Interface': {
+                'en': ['ui', 'design', 'layout', 'interface', 'button', 'screen', 'navigate', 'look', 'appearance'],
+                'am': ['መልክ', 'ዲዛይን', 'ማያሽን', 'መስተጋብር', 'አማራጭ', 'ማየት', 'ቀላል', 'አስቸጋሪ']
+            },
+            'Transaction Issues': {
+                'en': ['transfer', 'transaction', 'failed', 'error', 'stuck', 'decline', 'send money', 'receive'],
+                'am': ['ገንዘብ', 'መላላክ', 'ገቢ', 'ወጪ', 'ባንክ', 'መላላፊያ', 'አልሰራም', 'ችግር']
+            },
+            'Customer Support': {
+                'en': ['support', 'service', 'help', 'response', 'contact', 'assistance', 'call', 'email'],
+                'am': ['አገልግሎት', 'አስተዳደር', 'ሰራተኞች', 'እርዳታ', 'መልስ', 'ደውለው ሂዱ', 'አገናኝ', 'ድጋፍ']
+            },
+            'Fees & Charges': {
+                'en': ['fee', 'charge', 'cost', 'money', 'payment', 'expensive', 'cheap', 'price'],
+                'am': ['ክፍያ', 'ቀሪ ሒሳብ', 'ተቀናሽ', 'ወጪ', 'ገንዘብ', 'ቀንሷል', 'ጨምሯል', 'ዋጋ']
+            }
+        }
+        
+        theme_scores = {theme: 0 for theme in theme_keywords}
+        
+        for theme, keywords in theme_keywords.items():
+            lang = language if language in ['en', 'am'] else 'en'
+            for keyword in keywords.get(lang, []):
+                if keyword in text_lower:
+                    theme_scores[theme] += 1
+        
+        top_themes = sorted(theme_scores.items(), key=lambda x: x[1], reverse=True)[:2]
+        return [theme for theme, score in top_themes if score > 0] or ['Other']
+    except Exception as e:
+        return ['Error']
+
 def main():
+    global en_sentiment, multi_sentiment
     print("Starting sentiment analysis...")
     
     # 1. Load data
@@ -76,34 +161,6 @@ def main():
         print(f"Error loading models: {e}")
         return
 
-    def analyze_sentiment(text, language='en'):
-        try:
-            if not isinstance(text, str) or not text.strip():
-                return "NEUTRAL", 0.0
-                
-            text = str(text).strip()
-            if len(text) < 3:
-                return "NEUTRAL", 0.0
-                
-            if language == 'am':
-                try:
-                    result = multi_sentiment(text[:512])[0]
-                    score = result['score']
-                    if result['label'] in ['4 stars', '5 stars']:
-                        return "POSITIVE", score
-                    elif result['label'] in ['1 star', '2 stars']:
-                        return "NEGATIVE", score
-                    return "NEUTRAL", score
-                except:
-                    language = 'en'  # Fallback to English model
-            
-            if language in ['en', 'other', 'unknown']:
-                result = en_sentiment(text[:512])[0]
-                return result['label'].upper(), result['score']
-            return "NEUTRAL", 0.0
-        except Exception as e:
-            return "ERROR", 0.0
-
     print("   Analyzing sentiment for all reviews...")
     df[['sentiment', 'sentiment_score']] = df.apply(
         lambda x: pd.Series(analyze_sentiment(x['review'], x['language'])), 
@@ -119,52 +176,14 @@ def main():
         spacy.cli.download("en_core_web_sm")
         nlp_en = spacy.load("en_core_web_sm")
 
-    theme_keywords = {
-        'App Performance': {
-            'en': ['slow', 'fast', 'crash', 'lag', 'freeze', 'speed', 'performance', 'working', 'not working'],
-            'am': ['ዘግይቷል', 'ፈጣን', 'ፕሮግራሙ', 'ስልክ', 'መተግበሪያ', 'ፈረሰ', 'ተቋርጧል', 'ስራ', 'አይሰራም']
-        },
-        'User Interface': {
-            'en': ['ui', 'design', 'layout', 'interface', 'button', 'screen', 'navigate', 'look', 'appearance'],
-            'am': ['መልክ', 'ዲዛይን', 'ማያሽን', 'መስተጋብር', 'አማራጭ', 'ማየት', 'ቀላል', 'አስቸጋሪ']
-        },
-        'Transaction Issues': {
-            'en': ['transfer', 'transaction', 'failed', 'error', 'stuck', 'decline', 'send money', 'receive'],
-            'am': ['ገንዘብ', 'መላላክ', 'ገቢ', 'ወጪ', 'ባንክ', 'መላላፊያ', 'አልሰራም', 'ችግር']
-        },
-        'Customer Support': {
-            'en': ['support', 'service', 'help', 'response', 'contact', 'assistance', 'call', 'email'],
-            'am': ['አገልግሎት', 'አስተዳደር', 'ሰራተኞች', 'እርዳታ', 'መልስ', 'ደውለው ሂዱ', 'አገናኝ', 'ድጋፍ']
-        },
-        'Fees & Charges': {
-            'en': ['fee', 'charge', 'cost', 'money', 'payment', 'expensive', 'cheap', 'price'],
-            'am': ['ክፍያ', 'ቀሪ ሒሳብ', 'ተቀናሽ', 'ወጪ', 'ገንዘብ', 'ቀንሷል', 'ጨምሯል', 'ዋጋ']
-        }
-    }
-
-    def extract_themes(text, language='en'):
-        try:
-            if not isinstance(text, str) or not text.strip():
-                return ['Other']
-                
-            text_lower = str(text).lower()
-            theme_scores = {theme: 0 for theme in theme_keywords}
-            
-            for theme, keywords in theme_keywords.items():
-                lang = language if language in ['en', 'am'] else 'en'
-                for keyword in keywords.get(lang, []):
-                    if keyword in text_lower:
-                        theme_scores[theme] += 1
-            
-            top_themes = sorted(theme_scores.items(), key=lambda x: x[1], reverse=True)[:2]
-            return [theme for theme, score in top_themes if score > 0] or ['Other']
-        except Exception as e:
-            return ['Error']
-
     print("   Identifying themes...")
     df['themes'] = df.apply(lambda x: extract_themes(x['review'], x['language']), axis=1)
 
     # 5. Save Results
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = f"analyzed_reviews_{timestamp}.csv"
+    output_path = DATA_DIR / output_filename
+    
     print(f"\n💾 Saving results to: {output_path}")
     try:
         df.to_csv(str(output_path), index=False)
@@ -211,8 +230,6 @@ def main():
     print("\n🎭 Most Common Themes:")
     all_themes = [theme for sublist in df['themes'] for theme in (sublist if isinstance(sublist, list) else [sublist])]
     print(pd.Series(all_themes).value_counts().head(10))
-
-    print("\n🎉 Analysis completed successfully!")
 
 if __name__ == "__main__":
     main()
