@@ -1,105 +1,286 @@
-# Fintech App Review Analysis
+# Customer Experience Analytics for Fintech Apps  
+### End-to-End Review Intelligence Pipeline (Task 1 → Task 4)
 
-A powerful tool for analyzing customer reviews of banking and fintech applications, with support for both English and Amharic languages. This project helps identify user sentiment, common issues, and areas for improvement based on app store reviews.
+This project builds a complete data pipeline for analyzing customer reviews from banking and fintech applications.  
+It includes scraping, cleaning, preprocessing, sentiment analysis, thematic extraction, database integration, SQL-based insights, and visual analytics.
 
-## ✨ Features
+The work is structured according to the KAIM Week-2 task guidelines (Task 1, 2, 3, 4), each implemented carefully and incrementally.
 
-- **Bilingual Sentiment Analysis**
-  - English and Amharic language support
-  - Custom models for each language
-  - Sentiment classification (Positive/Negative/Neutral)
+==================================================================
+TASK 1 — Git & Environment Setup
+==================================================================
 
-- **Thematic Analysis**
-  - Identifies common themes in reviews
-  - Language-specific keyword matching
-  - Categorizes feedback into meaningful topics
+### ✔ Repository Setup
+A new GitHub repository was created:
 
-- **Comprehensive Reporting**
-  - Language distribution analysis
-  - Sentiment trends by bank
-  - Most common issues and praises
-  - Detailed CSV exports
+```
+solar-challenge-week1 (then Customer-Experience-Analytics-for-Fintech-Apps)
+```
 
-## 🚀 Getting Started
+### ✔ Branching Workflow
+Branches created during Task 1:
 
-### Prerequisites
+```
+main
+setup-task
+task-2
+task-3
+task-4
+```
 
-- Python 3.8+
-- pip (Python package manager)
+### ✔ Environment Setup
+Created a virtual environment:
 
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/yourusername/Customer-Experience-Analytics-for-Fintech-Apps.git](https://github.com/yourusername/Customer-Experience-Analytics-for-Fintech-Apps.git)
-   cd Customer-Experience-Analytics-for-Fintech-Apps
-
-2. Create and activate a virtual environment (recommended):
-
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-3. Install dependencies:
-bash
+```
+python -m venv .venv
+.venv/Scripts/activate
 pip install -r requirements.txt
+```
 
-4. Download spaCy language model:
-bash
-python -m spacy download en_core_web_sm
+### ✔ GitHub Actions (CI)
+A CI workflow was added:
 
-🛠️ Usage
-Place your clean review data in 
+```
+.github/workflows/ci.yml
+```
+
+This workflow:
+- Installs dependencies  
+- Runs linting  
+- Runs basic unit tests  
+- Ensures project consistency  
+
+### ✔ README + .gitignore
+- Added `.gitignore` including data/, venv, checkpoints  
+- Documented full setup instructions  
+
+==================================================================
+TASK 2 — Data Cleaning, Preprocessing & EDA
+==================================================================
+
+### ✔ Raw Data Acquisition
+Reviews were scraped from Google Play for banks such as:
+
+- Commercial Bank of Ethiopia (CBE)
+- Bank of Abyssinia (BOA)
+- Cooperative Bank of Oromia (Coop)
+
+Stored in:
+
+```
+data/raw_reviews.csv
+```
+
+### ✔ Cleaning & Preprocessing
+Script: `scripts/preprocess_reviews.py`
+
+Includes:
+- Removing HTML/emoji noise  
+- Normalizing text  
+- Lowercasing  
+- Handling missing fields  
+- Converting dates  
+- Language detection  
+- Filtering short/invalid reviews  
+
+Output:
+
+```
 data/clean_reviews.csv
+```
 
-Run the analysis:
-bash
-python scripts/sentiment_analysis.py
+### ✔ Exploratory Data Analysis
+Initial analyses included:
+- Review distribution over time  
+- Language distribution  
+- Rating distribution  
+- Bank-level trends  
+- Frequent keywords  
 
-Check the data directory for the output file (e.g., analyzed_reviews_YYYYMMDD_HHMMSS.csv)
+Generated using:
+```
+notebooks/EDA.ipynb
+```
 
-📊 Output
-The analysis generates:
-A timestamped CSV file with detailed analysis of each review
-Console output with summary statistics including:
-Language distribution
-Sentiment distribution
-Common themes
-Performance metrics by bank
+==================================================================
+TASK 3 — Sentiment Analysis, Themes & Database Integration
+==================================================================
 
-📁 Project Structure
+### ✔ Sentiment Analysis
+Script: `scripts/sentiment_analysis.py`
+
+Models used:
+- English → DistilBERT sentiment model  
+- Amharic → Translated or lexicon-based scoring  
+
+Outputs columns:
+```
+sentiment (POSITIVE / NEGATIVE / NEUTRAL)
+sentiment_score (0 → 1)
+```
+
+### ✔ Theme Extraction
+Themes assigned using:
+- Rule-based keyword grouping  
+- NLP phrase extraction  
+
+Themes include:
+```
+App Performance
+Customer Support
+Transaction Issues
+Security
+Fees & Charges
+Other
+```
+
+### ✔ Final Analyzed File
+```
+data/analyzed_reviews_YYYYMMDD_HHMMSS.csv
+```
+
+### ✔ PostgreSQL Database Creation
+Script: `Database/database_setup.py`
+
+Creates:
+```
+banks table
+reviews table
+```
+
+### ✔ Data Loading Script
+`Database/load_data.py` inserts:
+- Bank names  
+- Reviews  
+- Sentiment scores  
+- Themes  
+
+### ✔ SQL Verification
+`Database/verify_data.py` checks:
+- Review counts  
+- Sentiment ratios  
+- Theme distributions  
+- Ratings per bank  
+
+==================================================================
+TASK 4 — Insights, Drivers, Pain Points, Visualizations & Recommendations
+==================================================================
+
+### ✔ Drivers & Pain Points Extraction
+Using the final theme parser + sentiment filtering:
+
+**Drivers (Positive Themes)**  
+Examples:
+- "App Performance"
+- "Customer Support"
+- "Fees & Charges" (when praised)
+
+**Pain Points (Negative Themes)**  
+Examples:
+- "Transaction Issues"
+- "Login Problems"
+- "Verification Issues"
+- "Other" (generic dissatisfaction)
+
+### ✔ Bank Comparison Example (CBE)
+- High number of positive reviews (“easy”, “fast”, “helpful app”)
+- Negative reviews primarily due to verification issues abroad
+- Frequent theme: "Transaction Issues"
+
+### ✔ Visualizations
+Generated by:
+
+```
+scripts/analysis.py
+notebooks/insights.ipynb
+```
+
+Includes:
+- Sentiment distribution barplot  
+- Rating histogram  
+- Theme frequency barplot  
+- Sentiment trend over time  
+- Word cloud from themes  
+
+Saved in:
+
+```
+visualizations/
+```
+
+### ✔ Example Insights Summary
+CBE Insights:
+- 85% positive sentiment
+- Main driver: app responsiveness
+- Main pain point: transaction errors + verification issues
+
+BOA Insights:
+- Strong UI satisfaction
+- Pain point: slow performance
+
+### ✔ Recommendations (Per Bank)
+CBE:
+- Improve remote login verification flow
+- Enhance international accessibility
+- Reduce transaction failure frequency
+
+BOA:
+- Optimize loading time
+- Improve crash handling and stability
+
+Coop:
+- Strengthen UX consistency
+- Provide clearer error messages
+
+### ✔ Ethical Considerations
+- Negative bias in user review behavior  
+- Cultural/language variation in sentiment  
+- Emotions, sarcasm, exaggeration  
+- Potential misclassification of multilingual text  
+
+==================================================================
+PROJECT FEATURES (SUMMARY)
+==================================================================
+
+• End-to-end review pipeline  
+• Sentiment + theme extraction  
+• SQL database integration  
+• Visual dashboards  
+• Drivers & pain points  
+• Actionable recommendations  
+• Full Git workflow with CI
+
+==================================================================
+PROJECT STRUCTURE
+==================================================================
+
 Customer-Experience-Analytics-for-Fintech-Apps/
-├── data/                    # Data files
-│   ├── clean_reviews.csv    # Input data
-│   └── analyzed_reviews_*.csv # Output files (ignored in git)
+├── data/
+│   ├── raw_reviews.csv
+│   ├── clean_reviews.csv
+│   └── analyzed_reviews_*.csv
+│
+├── Database/
+│   ├── database_setup.py
+│   ├── load_data.py
+│   └── verify_data.py
+│
+├── notebooks/
+│   └── insights.ipynb
+│
 ├── scripts/
-│   ├── sentiment_analysis.py # Main analysis script
-│   └── scrape_reviews.py    # Web scraping utility (optional)
-├── .gitignore              # Git ignore rules
-├── README.md               # This file
-└── requirements.txt        # Python dependencies
+│   ├── scrape_reviews.py
+│   ├── preprocess_reviews.py
+│   ├── sentiment_analysis.py
+│   ├── insights_task4.py
+│   └── analysis.py
+│
+├── visualizations/
+├── tests/
+├── requirements.txt
+└── README.md
 
-
-📝 Requirements
-The project requires the following Python packages (automatically installed via 
-requirements.txt
-):
-
-pandas
-numpy
-transformers
-torch
-spacy
-langdetect
-python-dotenv
-🤝 Contributing
-Fork the repository
-Create a feature branch (git checkout -b feature/AmazingFeature)
-Commit your changes (git commit -m 'Add some AmazingFeature')
-Push to the branch (git push origin feature/AmazingFeature)
-Open a Pull Request
-
-🙏 Acknowledgments
-Hugging Face Transformers
-spaCy for NLP processing
-All open-source contributors
-To use this README:
+==================================================================
+END OF README  
+Developer-Style Version (Markdown → Export as PDF)
+==================================================================
