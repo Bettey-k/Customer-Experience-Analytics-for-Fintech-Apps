@@ -36,3 +36,18 @@ ENV/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Database
+*.sql
+*.sqlite
+*.db
+
+# Environment variables
+.env
+
+# IDE
+.idea/
+.vscode/
+__pycache__/
+*.py[cod]
+*$py.class
