@@ -8,3 +8,5 @@ spacy
 nltk
 pytest>=7.0.0
 flake8>=4.0.0
+matplotlib
+seaborn
