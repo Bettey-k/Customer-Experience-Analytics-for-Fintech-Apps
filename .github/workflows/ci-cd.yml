@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.11", "3.10"]  # Primary version 3.11 with 3.10 for backward compatibility
     
     steps:
     - uses: actions/checkout@v3
@@ -49,7 +49,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'  # Using Python 3.11 for deployment to match local environment
     
     - name: Install dependencies
       run: |
